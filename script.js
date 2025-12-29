@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
             bubble.remove();
             removedByHand = true;
             popSound.currentTime = 0;
-            popSound.play();
+            popSound.play(Balloon-Pop01-1(Dry).mp3);
             score++;
             scoreDiv.textContent = "Score: " + score;
             return true;
@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
       bubble.remove();
       removedByHand = true;
       popSound.currentTime = 0;
-      popSound.play();
+      popSound.play(Balloon-Pop01-1(Dry).mp3);
       score++;
       scoreDiv.textContent = "Score: " + score;
     });
