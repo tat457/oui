@@ -137,21 +137,53 @@ document.addEventListener("DOMContentLoaded", () => {
     // タッチでも割れる
     bubble.addEventListener("touchstart", () => {
       if(removedByHand) return;
-      bubble.remove();
       removedByHand = true;
-      popSound.currentTime = 0;
-      popSound.play();
-      score++;
+
+popSound.currentTime = 0;
+popSound.play();
+
+bubble.remove();
+
+score++;
+scoreDiv.textContent = "Score: " + score;
+
       scoreDiv.textContent = "Score: " + score;
     });
   }
 
   // --- スタートボタン ---
-  startBtn.addEventListener("click", () => {
-    if(bubbleInterval){
+ startBtn.addEventListener("click", () => {
+
+  // 🔑 iOS Safari 音声アンロック（超重要）
+  popSound.muted = true;
+  popSound.play().then(() => {
+    popSound.pause();
+    popSound.currentTime = 0;
+    popSound.muted = false;
+  });
+
+  if(bubbleInterval){
+    clearInterval(bubbleInterval);
+  }
+  bubbleInterval = setInterval(createBubble, 600);
+
+  timeLeft = 30;
+  timerDiv.textContent = "Time: " + timeLeft;
+  score = 0;
+  scoreDiv.textContent = "Score: 0";
+
+  const timerInterval = setInterval(() => {
+    if(timeLeft <= 0){
+      clearInterval(timerInterval);
       clearInterval(bubbleInterval);
+      bubbleInterval = null;
+      alert(`🎉終了！あなたのスコア: ${score}`);
+      return;
     }
-    bubbleInterval = setInterval(createBubble, 600);
+    timeLeft--;
+    timerDiv.textContent = "Time: " + timeLeft;
+  }, 1000);
+});
 
     // タイマーリセット
     timeLeft = 30;
