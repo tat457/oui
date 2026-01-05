@@ -154,11 +154,10 @@ document.addEventListener("DOMContentLoaded", () => {
 +
 +} //
   
- 
-  // --- スタートボタン ---
+ // --- スタートボタン ---
  startBtn.addEventListener("click", () => {
 
-  // 🔑 iOS Safari 音声アンロック（超重要）
+  // 🔑 iOS 音声アンロック
   popSound.muted = true;
   popSound.play().then(() => {
     popSound.pause();
@@ -166,28 +165,29 @@ document.addEventListener("DOMContentLoaded", () => {
     popSound.muted = false;
   });
 
-  if(bubbleInterval){
-    clearInterval(bubbleInterval);
-  }
+  if (bubbleInterval) clearInterval(bubbleInterval);
   bubbleInterval = setInterval(createBubble, 600);
 
-  timeLeft = 30;
-  timerDiv.textContent = "Time: " + timeLeft;
   score = 0;
   scoreDiv.textContent = "Score: 0";
 
+  timeLeft = 30;
+  timerDiv.textContent = "Time: " + timeLeft;
+
   const timerInterval = setInterval(() => {
-    if(timeLeft <= 0){
+    timeLeft--;
+    timerDiv.textContent = "Time: " + timeLeft;
+
+    if (timeLeft <= 0) {
       clearInterval(timerInterval);
       clearInterval(bubbleInterval);
       bubbleInterval = null;
       alert(`🎉終了！あなたのスコア: ${score}`);
-      return;
     }
-    timeLeft--;
-    timerDiv.textContent = "Time: " + timeLeft;
   }, 1000);
 });
+ 
+
 
     
 
