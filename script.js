@@ -151,6 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
     bubble.remove();
   }, 250);
 });
++
++} //
+  
  
   // --- スタートボタン ---
  startBtn.addEventListener("click", () => {
@@ -186,23 +189,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 1000);
 });
 
-    // タイマーリセット
-    timeLeft = 30;
-    timerDiv.textContent = "Time: " + timeLeft;
-    score = 0;
-    scoreDiv.textContent = "Score: 0";
-
-    const timerInterval = setInterval(() => {
-      if(timeLeft <= 0){
-        clearInterval(timerInterval);
-        clearInterval(bubbleInterval);
-        bubbleInterval = null;
-        alert(`🎉終了！あなたのスコア: ${score}`);
-        return;
-      }
-      timeLeft--;
-      timerDiv.textContent = "Time: " + timeLeft;
-    }, 1000);
-  });
+    
 
 });
