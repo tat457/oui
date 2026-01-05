@@ -138,12 +138,8 @@ document.addEventListener("DOMContentLoaded", () => {
    bubble.addEventListener("touchstart", () => {
   if (removedByHand) return;
   removedByHand = true;
-
-  bubble.classList.add("burst"); // ←追加
-
   popSound.currentTime = 0;
   popSound.play();
-
   score++;
   scoreDiv.textContent = "Score: " + score;
 
