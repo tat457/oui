@@ -1,7 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
   const video = document.getElementById("video");
   const startBtn = document.getElementById("startBtn");
-
+　const bgm = new Audio("ゲームBGM_Music.mp3");
+bgm.loop = true;
+bgm.volume = 0.5; // お好みで
   const popSound = new Audio('Balloon-Pop01-1(Dry).mp3'); // GitHub Pages に置く
   let bubbleInterval = null;
   let score = 0;
@@ -29,7 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
   timerDiv.style.zIndex = "10";
   timerDiv.textContent = "Time: 30";
   document.body.appendChild(timerDiv);
-
+  bgm.pause();
+  bgm.currentTime = 0;
+  
   // --- リセットボタン ---
   const resetBtn = document.createElement("button");
   resetBtn.textContent = "リセット";
@@ -43,7 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.appendChild(resetBtn);
 
   resetBtn.addEventListener("click", () => {
-    clearInterval(bubbleInterval);
+    bgm.pause();
+    bgm.currentTime = 0;    clearInterval(bubbleInterval);
     bubbleInterval = null;
     document.querySelectorAll(".bubble").forEach(b => b.remove());
     score = 0;
@@ -152,13 +157,17 @@ scoreDiv.textContent = "Score: " + score;
 
   // --- スタートボタン ---
   startBtn.addEventListener("click", () => {
-
+ 
   // 🔑 iOS Safari 音声アンロック（超重要）
   popSound.muted = true;
   popSound.play().then(() => {
     popSound.pause();
     popSound.currentTime = 0;
     popSound.muted = false;
+ 
+  bgm.muted = true;
+  bgm.play().then(() => {
+    bgm.muted = false;
   });
 
   if(bubbleInterval){
