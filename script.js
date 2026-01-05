@@ -135,22 +135,23 @@ document.addEventListener("DOMContentLoaded", () => {
     move();
 
     // タッチでも割れる
-    bubble.addEventListener("touchstart", () => {
-      if(removedByHand) return;
-      removedByHand = true;
+   bubble.addEventListener("touchstart", () => {
+  if (removedByHand) return;
+  removedByHand = true;
 
-popSound.currentTime = 0;
-popSound.play();
+  bubble.classList.add("burst"); // ←追加
 
-bubble.remove();
+  popSound.currentTime = 0;
+  popSound.play();
 
-score++;
-scoreDiv.textContent = "Score: " + score;
+  score++;
+  scoreDiv.textContent = "Score: " + score;
 
-      scoreDiv.textContent = "Score: " + score;
-    });
-  }
-
+  setTimeout(() => {
+    bubble.remove();
+  }, 250);
+});
+ 
   // --- スタートボタン ---
  startBtn.addEventListener("click", () => {
 
