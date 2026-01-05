@@ -164,7 +164,7 @@ scoreDiv.textContent = "Score: " + score;
     popSound.pause();
     popSound.currentTime = 0;
     popSound.muted = false;
- 
+  }
   bgm.muted = true;
   bgm.play().then(() => {
     bgm.muted = false;
