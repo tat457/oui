@@ -1,10 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
   const video = document.getElementById("video");
   const startBtn = document.getElementById("startBtn");
-　const bgm = new Audio("ゲームBGM_Music.mp3");
-bgm.loop = true;
-bgm.volume = 0.5; // お好みで
+　
   const popSound = new Audio('Balloon-Pop01-1(Dry).mp3'); // GitHub Pages に置く
+  const bgm = new Audio("ゲームBGM_Music.mp3");
+bgm.loop = true;
+bgm.volume = 0.5; // お好みで  
   let bubbleInterval = null;
   let score = 0;
   let timeLeft = 30;
