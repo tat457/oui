@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
             bubble.remove();
             removedByHand = true;
             popSound.currentTime = 0;
-            popSound.play(Balloon-Pop01-1(Dry).mp3);
+            popSound.play();
             score++;
             scoreDiv.textContent = "Score: " + score;
             return true;
