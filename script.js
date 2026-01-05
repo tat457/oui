@@ -135,56 +135,41 @@ document.addEventListener("DOMContentLoaded", () => {
     move();
 
     // タッチでも割れる
-   bubble.addEventListener("touchstart", () => {
-  if (removedByHand) return;
-  removedByHand = true;
-  popSound.currentTime = 0;
-  popSound.play();
-  score++;
-  scoreDiv.textContent = "Score: " + score;
+    bubble.addEventListener("touchstart", () => {
+      if(removedByHand) return;
+      bubble.remove();
+      removedByHand = true;
+      popSound.currentTime = 0;
+      popSound.play();
+      score++;
+      scoreDiv.textContent = "Score: " + score;
+    });
+  }
 
-  setTimeout(() => {
-    bubble.remove();
-  }, 250);
-});
-+
-+} //
-  
- // --- スタートボタン ---
- startBtn.addEventListener("click", () => {
-
-  // 🔑 iOS 音声アンロック
-  popSound.muted = true;
-  popSound.play().then(() => {
-    popSound.pause();
-    popSound.currentTime = 0;
-    popSound.muted = false;
-  });
-
-  if (bubbleInterval) clearInterval(bubbleInterval);
-  bubbleInterval = setInterval(createBubble, 600);
-
-  score = 0;
-  scoreDiv.textContent = "Score: 0";
-
-  timeLeft = 30;
-  timerDiv.textContent = "Time: " + timeLeft;
-
-  const timerInterval = setInterval(() => {
-    timeLeft--;
-    timerDiv.textContent = "Time: " + timeLeft;
-
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
+  // --- スタートボタン ---
+  startBtn.addEventListener("click", () => {
+    if(bubbleInterval){
       clearInterval(bubbleInterval);
-      bubbleInterval = null;
-      alert(`🎉終了！あなたのスコア: ${score}`);
     }
-  }, 1000);
-});
- 
+    bubbleInterval = setInterval(createBubble, 600);
 
+    // タイマーリセット
+    timeLeft = 30;
+    timerDiv.textContent = "Time: " + timeLeft;
+    score = 0;
+    scoreDiv.textContent = "Score: 0";
 
-    
+    const timerInterval = setInterval(() => {
+      if(timeLeft <= 0){
+        clearInterval(timerInterval);
+        clearInterval(bubbleInterval);
+        bubbleInterval = null;
+        alert(`🎉終了！あなたのスコア: ${score}`);
+        return;
+      }
+      timeLeft--;
+      timerDiv.textContent = "Time: " + timeLeft;
+    }, 1000);
+  });
 
 });
