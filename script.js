@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const popSound = new Audio('Balloon-Pop01-1(Dry).mp3'); // GitHub Pages に置く
   let bubbleInterval = null;
+  let timerInterval = null;
   let score = 0;
   let timeLeft = 30;
   let handPos = []; // 複数ランドマーク用
@@ -45,6 +46,8 @@ document.addEventListener("DOMContentLoaded", () => {
   resetBtn.addEventListener("click", () => {
     clearInterval(bubbleInterval);
     bubbleInterval = null;
+    clearInterval(timerInterval);
+    timerInterval = null;
     document.querySelectorAll(".bubble").forEach(b => b.remove());
     score = 0;
     scoreDiv.textContent = "Score: 0";
@@ -63,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   hands.onResults(results => {
     handPos = [];
-    if(results.multiHandLandmarks.length > 0){
+    if(results.multiHandLandmarks && results.multiHandLandmarks.length > 0){
       const hand = results.multiHandLandmarks[0];
       const landmarks = [hand[4], hand[8]]; // 親指先、人差し指先
       landmarks.forEach(tip => {
@@ -95,34 +98,37 @@ document.addEventListener("DOMContentLoaded", () => {
     let removedByHand = false;
 
     function move() {
-      if(removedByHand) return;
+      if (removedByHand) return;
 
       let top = parseFloat(bubble.style.top);
       top -= speed;
       bubble.style.top = top + "px";
 
-      if(top + 60 < 0){
+      if (top + 60 < 0) {
         bubble.remove();
         return;
       }
 
       // --- 手判定 ---
-      if(handPos.length > 0){
+      if (handPos.length > 0) {
         const rect = bubble.getBoundingClientRect();
         const bx = rect.left + rect.width/2;
         const by = rect.top + rect.height/2;
 
-        if(handPos.some(p => {
+        if (handPos.some(p => {
           const dx = bx - p.x;
           const dy = by - p.y;
           const distance = Math.sqrt(dx*dx + dy*dy);
-          if(distance < 100){
-            bubble.remove();
+          if (distance < 100) {
+            // 割れる処理（先に音・スコア、アニメ）
             removedByHand = true;
+            bubble.classList.add("burst");
             popSound.currentTime = 0;
-            popSound.play();
+            // play() の Promise を無視せず呼ぶ（任意のエラーハンドル可能）
+            popSound.play().catch(()=>{});
             score++;
             scoreDiv.textContent = "Score: " + score;
+            setTimeout(() => bubble.remove(), 250);
             return true;
           }
           return false;
@@ -134,69 +140,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
     move();
 
-    // タッチでも割れる
+    // タッチでも割れる（音→アニメ→スコア→削除の順）
     bubble.addEventListener("touchstart", () => {
-      if(removedByHand) return;
-      bubble.remove();
+      if (removedByHand) return;
       removedByHand = true;
+      bubble.classList.add("burst");
       popSound.currentTime = 0;
-      popSound.play();
+      popSound.play().catch(()=>{});
       score++;
       scoreDiv.textContent = "Score: " + score;
+      setTimeout(() => bubble.remove(), 250);
     });
   }
 
   // --- スタートボタン ---
   startBtn.addEventListener("click", () => {
+    // iOS Safari 音声アンロック（ユーザー操作内で一度再生して解除）
+    popSound.muted = true;
+    popSound.play().then(() => {
+      popSound.pause();
+      popSound.currentTime = 0;
+      popSound.muted = false;
+    }).catch(()=>{ popSound.muted = false; });
 
-  // 🔑 iOS Safari 音声アンロック（超重要）
-  popSound.muted = true;
-  popSound.play().then(() => {
-    popSound.pause();
-    popSound.currentTime = 0;
-    popSound.muted = false;
-  });
-
-  if(bubbleInterval){
+    // reset any existing intervals/state
     clearInterval(bubbleInterval);
-  }
-  bubbleInterval = setInterval(createBubble, 600);
-
-  timeLeft = 30;
-  timerDiv.textContent = "Time: " + timeLeft;
-  score = 0;
-  scoreDiv.textContent = "Score: 0";
-
-  const timerInterval = setInterval(() => {
-    if(timeLeft <= 0){
-      clearInterval(timerInterval);
-      clearInterval(bubbleInterval);
-      bubbleInterval = null;
-      alert(`🎉終了！あなたのスコア: ${score}`);
-      return;
-    }
-    timeLeft--;
-    timerDiv.textContent = "Time: " + timeLeft;
-  }, 1000);
-});
-
-
-    // タイマーリセット
-    timeLeft = 30;
-    timerDiv.textContent = "Time: " + timeLeft;
+    clearInterval(timerInterval);
+    bubbleInterval = null;
+    timerInterval = null;
+    document.querySelectorAll(".bubble").forEach(b => b.remove());
     score = 0;
     scoreDiv.textContent = "Score: 0";
+    timeLeft = 30;
+    timerDiv.textContent = "Time: " + timeLeft;
 
-    const timerInterval = setInterval(() => {
-      if(timeLeft <= 0){
+    // start generating bubbles
+    bubbleInterval = setInterval(createBubble, 600);
+
+    // start timer
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      timerDiv.textContent = "Time: " + timeLeft;
+
+      if (timeLeft <= 0) {
         clearInterval(timerInterval);
         clearInterval(bubbleInterval);
         bubbleInterval = null;
         alert(`🎉終了！あなたのスコア: ${score}`);
-        return;
       }
-      timeLeft--;
-      timerDiv.textContent = "Time: " + timeLeft;
     }, 1000);
   });
 
