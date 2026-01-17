@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
   const video = document.getElementById("video");
-  const startBtn = document.getElementById("startBtn");
 
   /* ===== 効果音 & BGM ===== */
   const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
@@ -14,172 +13,152 @@ document.addEventListener("DOMContentLoaded", () => {
   let timeLeft = 30;
   let handPos = [];
 
-  /* ===== 難易度設定 ===== */
+  /* ===== モード設定 ===== */
   const modes = {
-    easy:   { size: 60, speed: 1.0, interval: 600 },
-    normal: { size: 45, speed: 1.5, interval: 400 },
-    hard:   { size: 35, speed: 2.0, interval: 250 }
+    easy:   { size: 60, speed: 1.2, interval: 800 },
+    normal: { size: 45, speed: 1.8, interval: 550 },
+    hard:   { size: 35, speed: 2.4, interval: 350 }
   };
-  let currentMode = modes.easy;
+  let currentMode = "easy";
 
-  /* ===== モード選択（左上） ===== */
-  const modeSelect = document.createElement("select");
-  modeSelect.style.cssText = `
-    position:fixed;
-    top:8px;
-    left:8px;
-    z-index:20;
-    font-size:14px;
+  /* ===== 共通ボタンスタイル ===== */
+  const btnStyle = `
+    position: fixed;
+    top: 10px;
+    padding: 6px 14px;
+    font-size: 14px;
+    border-radius: 16px;
+    border: none;
+    background: rgba(255,255,255,0.85);
+    z-index: 20;
   `;
+
+  /* ===== モード選択 ===== */
+  const modeSelect = document.createElement("select");
   modeSelect.innerHTML = `
     <option value="easy">やさしい</option>
     <option value="normal">ふつう</option>
     <option value="hard">むずかしい</option>
   `;
-  modeSelect.addEventListener("change", () => {
-    currentMode = modes[modeSelect.value];
-  });
+  modeSelect.style.cssText = btnStyle + "left:10px;";
   document.body.appendChild(modeSelect);
 
-  /* ===== スタートボタン（上中央） ===== */
-  startBtn.style.cssText = `
-    position:fixed;
-    top:8px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:20;
-    font-size:14px;
-    padding:4px 14px;
-  `;
+  modeSelect.addEventListener("change", e => {
+    currentMode = e.target.value;
+  });
 
-  /* ===== リセットボタン（右上） ===== */
+  /* ===== スタートボタン ===== */
+  const startBtn = document.createElement("button");
+  startBtn.textContent = "スタート";
+  startBtn.style.cssText = btnStyle + "left:50%;transform:translateX(-50%);";
+  document.body.appendChild(startBtn);
+
+  /* ===== リセットボタン ===== */
   const resetBtn = document.createElement("button");
   resetBtn.textContent = "リセット";
-  resetBtn.style.cssText = `
-    position:fixed;
-    top:8px;
-    right:8px;
-    z-index:20;
-    font-size:14px;
-    padding:4px 14px;
-  `;
+  resetBtn.style.cssText = btnStyle + "right:10px;";
   document.body.appendChild(resetBtn);
 
+  /* ===== スコア ===== */
+  const scoreDiv = document.createElement("div");
+  scoreDiv.style.cssText =
+    "position:fixed;top:50px;left:10px;color:white;font-size:22px;z-index:10;";
+  scoreDiv.textContent = "Score: 0";
+  document.body.appendChild(scoreDiv);
+
+  /* ===== タイマー ===== */
+  const timerDiv = document.createElement("div");
+  timerDiv.style.cssText =
+    "position:fixed;top:50px;right:10px;color:white;font-size:22px;z-index:10;";
+  timerDiv.textContent = "Time: 30";
+  document.body.appendChild(timerDiv);
+
+  /* ===== リセット処理 ===== */
   resetBtn.addEventListener("click", () => {
     clearInterval(bubbleInterval);
     clearInterval(timerInterval);
     document.querySelectorAll(".bubble").forEach(b => b.remove());
-
+    bgm.pause();
+    bgm.currentTime = 0;
     score = 0;
     timeLeft = 30;
     scoreDiv.textContent = "Score: 0";
     timerDiv.textContent = "Time: 30";
-
-    bgm.pause();
-    bgm.currentTime = 0;
   });
-
-  /* ===== スコア表示 ===== */
-  const scoreDiv = document.createElement("div");
-  scoreDiv.style.cssText =
-    "position:fixed;top:60px;left:10px;color:white;font-size:22px;z-index:10;";
-  scoreDiv.textContent = "Score: 0";
-  document.body.appendChild(scoreDiv);
-
-  /* ===== タイマー表示 ===== */
-  const timerDiv = document.createElement("div");
-  timerDiv.style.cssText =
-    "position:fixed;top:60px;right:10px;color:white;font-size:22px;z-index:10;";
-  timerDiv.textContent = "Time: 30";
-  document.body.appendChild(timerDiv);
 
   /* ===== MediaPipe Hands ===== */
   const hands = new Hands({
-    locateFile: file =>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
   });
-
   hands.setOptions({
     maxNumHands: 1,
-    modelComplexity: 1,
     minDetectionConfidence: 0.7,
     minTrackingConfidence: 0.7
   });
 
-  hands.onResults(results => {
+  hands.onResults(res => {
     handPos = [];
-    if (results.multiHandLandmarks?.length) {
-      const hand = results.multiHandLandmarks[0];
-      [hand[4], hand[8]].forEach(tip => {
+    if (res.multiHandLandmarks?.length) {
+      [res.multiHandLandmarks[0][4], res.multiHandLandmarks[0][8]].forEach(t => {
         handPos.push({
-          x: window.innerWidth * (1 - tip.x),
-          y: window.innerHeight * tip.y
+          x: window.innerWidth * (1 - t.x),
+          y: window.innerHeight * t.y
         });
       });
     }
   });
 
-  const cameraMP = new Camera(video, {
+  const camera = new Camera(video, {
     onFrame: async () => await hands.send({ image: video }),
     width: 640,
     height: 480,
     facingMode: "user"
   });
-  cameraMP.start();
+  camera.start();
 
-  /* ===== 泡生成（上 → 下） ===== */
+  /* ===== 泡生成 ===== */
   function createBubble() {
+    const m = modes[currentMode];
     const bubble = document.createElement("div");
     bubble.className = "bubble";
-
-    const size = currentMode.size;
-    bubble.style.width = size + "px";
-    bubble.style.height = size + "px";
-    bubble.style.left =
-      Math.random() * (window.innerWidth - size) + "px";
-    bubble.style.top = -size + "px";
-
+    bubble.style.width = bubble.style.height = m.size + "px";
+    bubble.style.left = Math.random() * (window.innerWidth - m.size) + "px";
+    bubble.style.top = "-60px";
     document.body.appendChild(bubble);
 
-    const speed = (2 + Math.random() * 3) * currentMode.speed;
+    let y = -m.size;
     let removed = false;
 
     function burst() {
       if (removed) return;
       removed = true;
-
       bubble.classList.add("burst");
       popSound.currentTime = 0;
-      popSound.play().catch(() => {});
-
+      popSound.play().catch(()=>{});
       score++;
       scoreDiv.textContent = "Score: " + score;
-
       setTimeout(() => bubble.remove(), 250);
     }
 
     function move() {
       if (removed) return;
+      y += m.speed * 3;
+      bubble.style.top = y + "px";
 
-      let top = parseFloat(bubble.style.top);
-      top += speed;
-      bubble.style.top = top + "px";
-
-      if (top > window.innerHeight) {
+      if (y > window.innerHeight) {
         bubble.remove();
         return;
       }
 
       for (const p of handPos) {
-        const rect = bubble.getBoundingClientRect();
-        const dx = rect.left + rect.width / 2 - p.x;
-        const dy = rect.top + rect.height / 2 - p.y;
-        if (Math.sqrt(dx * dx + dy * dy) < size) {
+        const r = bubble.getBoundingClientRect();
+        const dx = r.left + r.width/2 - p.x;
+        const dy = r.top + r.height/2 - p.y;
+        if (Math.hypot(dx, dy) < m.size) {
           burst();
           return;
         }
       }
-
       requestAnimationFrame(move);
     }
 
@@ -207,18 +186,19 @@ document.addEventListener("DOMContentLoaded", () => {
     scoreDiv.textContent = "Score: 0";
     timerDiv.textContent = "Time: 30";
 
-    bubbleInterval = setInterval(createBubble, currentMode.interval);
+    bubbleInterval = setInterval(
+      createBubble,
+      modes[currentMode].interval
+    );
 
     timerInterval = setInterval(() => {
       timeLeft--;
       timerDiv.textContent = "Time: " + timeLeft;
-
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
         clearInterval(bubbleInterval);
         bgm.pause();
-        bgm.currentTime = 0;
-        alert(`終了！あなたのスコア: ${score}`);
+        alert(`🎉 終了！スコア: ${score}`);
       }
     }, 1000);
   });
