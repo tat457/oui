@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
   const bgm = new Audio("bgm_Music.mp3");
   bgm.loop = true;
-  bgm.volume = 0.４;
+  bgm.volume = 0.4; // ← 半角に修正（重要）
 
   let bubbleInterval = null;
   let timerInterval = null;
@@ -38,9 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
   resetBtn.addEventListener("click", () => {
     clearInterval(bubbleInterval);
     clearInterval(timerInterval);
-    bubbleInterval = null;
-    timerInterval = null;
-
     document.querySelectorAll(".bubble").forEach(b => b.remove());
 
     score = 0;
@@ -86,13 +83,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   cameraMP.start();
 
-  /* ===== 泡生成 ===== */
+  /* ===== 泡生成（上 → 下） ===== */
   function createBubble() {
     const bubble = document.createElement("div");
     bubble.className = "bubble";
     bubble.style.left =
       Math.random() * (window.innerWidth - 60) + "px";
-    bubble.style.top = window.innerHeight + "px";
+    bubble.style.top = "-60px"; // ← 画面上から出現
     document.body.appendChild(bubble);
 
     const speed = 1 + Math.random() * 2;
@@ -116,10 +113,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (removed) return;
 
       let top = parseFloat(bubble.style.top);
-      top -= speed;
+      top += speed; // ← 下方向へ移動
       bubble.style.top = top + "px";
 
-      if (top + 60 < 0) {
+      if (top > window.innerHeight) {
         bubble.remove();
         return;
       }
@@ -143,8 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===== スタート ===== */
   startBtn.addEventListener("click", async () => {
-
-    /* 🔑 iOS Safari 完全音声アンロック */
     try {
       bgm.muted = true;
       await bgm.play();
@@ -155,13 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       console.warn("BGM autoplay blocked:", e);
     }
-
-    popSound.muted = true;
-    popSound.play().then(() => {
-      popSound.pause();
-      popSound.currentTime = 0;
-      popSound.muted = false;
-    }).catch(()=>{});
 
     clearInterval(bubbleInterval);
     clearInterval(timerInterval);
@@ -183,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clearInterval(bubbleInterval);
         bgm.pause();
         bgm.currentTime = 0;
-        alert(`🎉終了！あなたのスコア: ${score}`);
+        alert(`終了！あなたのスコア: ${score}`);
       }
     }, 1000);
   });
