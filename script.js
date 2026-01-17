@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
   const bgm = new Audio("bgm_Music.mp3");
   bgm.loop = true;
-  bgm.volume = 0.4; // ← 半角に修正（重要）
+  bgm.volume = 0.4;
 
   let bubbleInterval = null;
   let timerInterval = null;
@@ -89,10 +89,16 @@ document.addEventListener("DOMContentLoaded", () => {
     bubble.className = "bubble";
     bubble.style.left =
       Math.random() * (window.innerWidth - 60) + "px";
-    bubble.style.top = "-60px"; // ← 画面上から出現
+    bubble.style.top = "-60px";
     document.body.appendChild(bubble);
 
-    const speed = 1 + Math.random() * 2;
+    /* ★★★ ここがスピード調整ポイント ★★★
+       以前: 1 + Math.random() * 2
+       今回: 2 + Math.random() * 3
+       → 全体的に少し速く
+    */
+    const speed = 2 + Math.random() * 3;
+
     let removed = false;
 
     function burst() {
@@ -113,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (removed) return;
 
       let top = parseFloat(bubble.style.top);
-      top += speed; // ← 下方向へ移動
+      top += speed;
       bubble.style.top = top + "px";
 
       if (top > window.innerHeight) {
