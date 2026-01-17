@@ -1,37 +1,92 @@
 document.addEventListener("DOMContentLoaded", () => {
   const video = document.getElementById("video");
   const startBtn = document.getElementById("startBtn");
-  const resetBtn = document.getElementById("resetBtn");
-  const modeSelect = document.getElementById("modeSelect");
 
-  /* ===== 音 ===== */
+  /* ===== 効果音 & BGM ===== */
   const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
   const bgm = new Audio("bgm_Music.mp3");
   bgm.loop = true;
   bgm.volume = 0.4;
 
-  /* ===== 状態 ===== */
-  let score = 0;
-  let timeLeft = 30;
   let bubbleInterval = null;
   let timerInterval = null;
+  let score = 0;
+  let timeLeft = 30;
   let handPos = [];
 
-  /* ===== モード設定 ===== */
-  const MODES = {
-    easy:   { size: 80, speed: 1.2, interval: 700 },
-    normal: { size: 55, speed: 1.8, interval: 500 },
-    hard:   { size: 40, speed: 2.4, interval: 350 }
+  /* ===== 難易度設定 ===== */
+  const modes = {
+    easy:   { size: 60, speed: 1.0, interval: 600 },
+    normal: { size: 45, speed: 1.5, interval: 400 },
+    hard:   { size: 35, speed: 2.0, interval: 250 }
   };
-  let currentMode = MODES.easy;
+  let currentMode = modes.easy;
 
-  /* ===== 表示 ===== */
+  /* ===== モード選択（左上） ===== */
+  const modeSelect = document.createElement("select");
+  modeSelect.style.cssText = `
+    position:fixed;
+    top:8px;
+    left:8px;
+    z-index:20;
+    font-size:14px;
+  `;
+  modeSelect.innerHTML = `
+    <option value="easy">やさしい</option>
+    <option value="normal">ふつう</option>
+    <option value="hard">むずかしい</option>
+  `;
+  modeSelect.addEventListener("change", () => {
+    currentMode = modes[modeSelect.value];
+  });
+  document.body.appendChild(modeSelect);
+
+  /* ===== スタートボタン（上中央） ===== */
+  startBtn.style.cssText = `
+    position:fixed;
+    top:8px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:20;
+    font-size:14px;
+    padding:4px 14px;
+  `;
+
+  /* ===== リセットボタン（右上） ===== */
+  const resetBtn = document.createElement("button");
+  resetBtn.textContent = "リセット";
+  resetBtn.style.cssText = `
+    position:fixed;
+    top:8px;
+    right:8px;
+    z-index:20;
+    font-size:14px;
+    padding:4px 14px;
+  `;
+  document.body.appendChild(resetBtn);
+
+  resetBtn.addEventListener("click", () => {
+    clearInterval(bubbleInterval);
+    clearInterval(timerInterval);
+    document.querySelectorAll(".bubble").forEach(b => b.remove());
+
+    score = 0;
+    timeLeft = 30;
+    scoreDiv.textContent = "Score: 0";
+    timerDiv.textContent = "Time: 30";
+
+    bgm.pause();
+    bgm.currentTime = 0;
+  });
+
+  /* ===== スコア表示 ===== */
   const scoreDiv = document.createElement("div");
   scoreDiv.style.cssText =
     "position:fixed;top:60px;left:10px;color:white;font-size:22px;z-index:10;";
   scoreDiv.textContent = "Score: 0";
   document.body.appendChild(scoreDiv);
 
+  /* ===== タイマー表示 ===== */
   const timerDiv = document.createElement("div");
   timerDiv.style.cssText =
     "position:fixed;top:60px;right:10px;color:white;font-size:22px;z-index:10;";
@@ -40,12 +95,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===== MediaPipe Hands ===== */
   const hands = new Hands({
-    locateFile: f =>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+    locateFile: file =>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
   });
 
   hands.setOptions({
     maxNumHands: 1,
+    modelComplexity: 1,
     minDetectionConfidence: 0.7,
     minTrackingConfidence: 0.7
   });
@@ -56,37 +112,36 @@ document.addEventListener("DOMContentLoaded", () => {
       const hand = results.multiHandLandmarks[0];
       [hand[4], hand[8]].forEach(tip => {
         handPos.push({
-          x: tip.x * window.innerWidth,   // ← 反転しない
-          y: tip.y * window.innerHeight
+          x: window.innerWidth * (1 - tip.x),
+          y: window.innerHeight * tip.y
         });
       });
     }
   });
 
-  const camera = new Camera(video, {
+  const cameraMP = new Camera(video, {
     onFrame: async () => await hands.send({ image: video }),
     width: 640,
     height: 480,
     facingMode: "user"
   });
-  camera.start();
+  cameraMP.start();
 
-  /* ===== 泡 ===== */
+  /* ===== 泡生成（上 → 下） ===== */
   function createBubble() {
     const bubble = document.createElement("div");
     bubble.className = "bubble";
 
     const size = currentMode.size;
-    const speed = currentMode.speed;
-
     bubble.style.width = size + "px";
     bubble.style.height = size + "px";
     bubble.style.left =
       Math.random() * (window.innerWidth - size) + "px";
-    bubble.style.top = "-" + size + "px";
+    bubble.style.top = -size + "px";
 
     document.body.appendChild(bubble);
 
+    const speed = (2 + Math.random() * 3) * currentMode.speed;
     let removed = false;
 
     function burst() {
@@ -94,14 +149,13 @@ document.addEventListener("DOMContentLoaded", () => {
       removed = true;
 
       bubble.classList.add("burst");
-
       popSound.currentTime = 0;
       popSound.play().catch(() => {});
 
       score++;
       scoreDiv.textContent = "Score: " + score;
 
-      setTimeout(() => bubble.remove(), 200);
+      setTimeout(() => bubble.remove(), 250);
     }
 
     function move() {
@@ -111,22 +165,22 @@ document.addEventListener("DOMContentLoaded", () => {
       top += speed;
       bubble.style.top = top + "px";
 
-      const rect = bubble.getBoundingClientRect();
+      if (top > window.innerHeight) {
+        bubble.remove();
+        return;
+      }
 
       for (const p of handPos) {
+        const rect = bubble.getBoundingClientRect();
         const dx = rect.left + rect.width / 2 - p.x;
         const dy = rect.top + rect.height / 2 - p.y;
-        if (Math.sqrt(dx * dx + dy * dy) < rect.width / 2) {
+        if (Math.sqrt(dx * dx + dy * dy) < size) {
           burst();
           return;
         }
       }
 
-      if (top < window.innerHeight + size) {
-        requestAnimationFrame(move);
-      } else {
-        bubble.remove();
-      }
+      requestAnimationFrame(move);
     }
 
     bubble.addEventListener("touchstart", burst);
@@ -135,9 +189,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===== スタート ===== */
   startBtn.addEventListener("click", async () => {
-    currentMode = MODES[modeSelect.value];
-
-    // iOS 音声アンロック
     try {
       bgm.muted = true;
       await bgm.play();
@@ -147,49 +198,28 @@ document.addEventListener("DOMContentLoaded", () => {
       bgm.play();
     } catch {}
 
-    popSound.muted = true;
-    popSound.play().then(() => {
-      popSound.pause();
-      popSound.currentTime = 0;
-      popSound.muted = false;
-    }).catch(()=>{});
-
-    document.querySelectorAll(".bubble").forEach(b => b.remove());
     clearInterval(bubbleInterval);
     clearInterval(timerInterval);
+    document.querySelectorAll(".bubble").forEach(b => b.remove());
 
     score = 0;
     timeLeft = 30;
     scoreDiv.textContent = "Score: 0";
     timerDiv.textContent = "Time: 30";
 
-    bubbleInterval = setInterval(
-      createBubble,
-      currentMode.interval
-    );
+    bubbleInterval = setInterval(createBubble, currentMode.interval);
 
     timerInterval = setInterval(() => {
       timeLeft--;
       timerDiv.textContent = "Time: " + timeLeft;
+
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
         clearInterval(bubbleInterval);
         bgm.pause();
-        alert(`終了！スコア: ${score}`);
+        bgm.currentTime = 0;
+        alert(`終了！あなたのスコア: ${score}`);
       }
     }, 1000);
-  });
-
-  /* ===== リセット ===== */
-  resetBtn.addEventListener("click", () => {
-    clearInterval(bubbleInterval);
-    clearInterval(timerInterval);
-    document.querySelectorAll(".bubble").forEach(b => b.remove());
-    bgm.pause();
-    bgm.currentTime = 0;
-    score = 0;
-    timeLeft = 30;
-    scoreDiv.textContent = "Score: 0";
-    timerDiv.textContent = "Time: 30";
   });
 });
