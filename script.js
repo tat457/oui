@@ -14,26 +14,43 @@ document.addEventListener("DOMContentLoaded", () => {
   let timeLeft = 30;
   let handPos = [];
 
-  /* ===== スコア表示 ===== */
-  const scoreDiv = document.createElement("div");
-  scoreDiv.style.cssText =
-    "position:fixed;top:10px;left:10px;color:white;font-size:24px;z-index:10;";
-  scoreDiv.textContent = "Score: 0";
-  document.body.appendChild(scoreDiv);
+  /* ===== 難易度設定 ===== */
+  const modes = {
+    easy:   { size: 60, speed: 1.0 },
+    normal: { size: 45, speed: 1.5 },
+    hard:   { size: 35, speed: 2.0 }
+  };
+  let currentMode = modes.easy;
 
-  /* ===== タイマー表示 ===== */
-  const timerDiv = document.createElement("div");
-  timerDiv.style.cssText =
-    "position:fixed;top:10px;right:10px;color:white;font-size:24px;z-index:10;";
-  timerDiv.textContent = "Time: 30";
-  document.body.appendChild(timerDiv);
+  /* ===== 上部UIエリア ===== */
+  const uiBar = document.createElement("div");
+  uiBar.style.cssText =
+    "position:fixed;top:5px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;";
+  document.body.appendChild(uiBar);
 
-  /* ===== リセットボタン ===== */
+  /* ===== モード選択 ===== */
+  const modeSelect = document.createElement("select");
+  modeSelect.innerHTML = `
+    <option value="easy">やさしい</option>
+    <option value="normal">ふつう</option>
+    <option value="hard">むずかしい</option>
+  `;
+  modeSelect.addEventListener("change", () => {
+    currentMode = modes[modeSelect.value];
+  });
+  uiBar.appendChild(modeSelect);
+
+  /* ===== スタートボタン（小） ===== */
+  startBtn.style.fontSize = "14px";
+  startBtn.style.padding = "4px 10px";
+  uiBar.appendChild(startBtn);
+
+  /* ===== リセットボタン（小） ===== */
   const resetBtn = document.createElement("button");
   resetBtn.textContent = "リセット";
-  resetBtn.style.cssText =
-    "position:fixed;bottom:60px;left:50%;transform:translateX(-50%);padding:10px 20px;font-size:20px;z-index:10;";
-  document.body.appendChild(resetBtn);
+  resetBtn.style.fontSize = "14px";
+  resetBtn.style.padding = "4px 10px";
+  uiBar.appendChild(resetBtn);
 
   resetBtn.addEventListener("click", () => {
     clearInterval(bubbleInterval);
@@ -48,6 +65,20 @@ document.addEventListener("DOMContentLoaded", () => {
     bgm.pause();
     bgm.currentTime = 0;
   });
+
+  /* ===== スコア表示 ===== */
+  const scoreDiv = document.createElement("div");
+  scoreDiv.style.cssText =
+    "position:fixed;top:45px;left:10px;color:white;font-size:22px;z-index:10;";
+  scoreDiv.textContent = "Score: 0";
+  document.body.appendChild(scoreDiv);
+
+  /* ===== タイマー表示 ===== */
+  const timerDiv = document.createElement("div");
+  timerDiv.style.cssText =
+    "position:fixed;top:45px;right:10px;color:white;font-size:22px;z-index:10;";
+  timerDiv.textContent = "Time: 30";
+  document.body.appendChild(timerDiv);
 
   /* ===== MediaPipe Hands ===== */
   const hands = new Hands({
@@ -83,21 +114,22 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   cameraMP.start();
 
-  /* ===== 泡生成（上 → 下） ===== */
+  /* ===== 泡生成（上→下） ===== */
   function createBubble() {
     const bubble = document.createElement("div");
     bubble.className = "bubble";
+
+    const size = currentMode.size;
+    bubble.style.width = size + "px";
+    bubble.style.height = size + "px";
+
     bubble.style.left =
-      Math.random() * (window.innerWidth - 60) + "px";
-    bubble.style.top = "-60px";
+      Math.random() * (window.innerWidth - size) + "px";
+    bubble.style.top = -size + "px";
     document.body.appendChild(bubble);
 
-    /* ★★★ ここがスピード調整ポイント ★★★
-       以前: 1 + Math.random() * 2
-       今回: 2 + Math.random() * 3
-       → 全体的に少し速く
-    */
-    const speed = 2 + Math.random() * 3;
+    const baseSpeed = 2 + Math.random() * 3;
+    const speed = baseSpeed * currentMode.speed;
 
     let removed = false;
 
@@ -131,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const rect = bubble.getBoundingClientRect();
         const dx = rect.left + rect.width / 2 - p.x;
         const dy = rect.top + rect.height / 2 - p.y;
-        if (Math.sqrt(dx * dx + dy * dy) < 100) {
+        if (Math.sqrt(dx * dx + dy * dy) < size) {
           burst();
           return;
         }
@@ -153,9 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
       bgm.currentTime = 0;
       bgm.muted = false;
       bgm.play();
-    } catch (e) {
-      console.warn("BGM autoplay blocked:", e);
-    }
+    } catch {}
 
     clearInterval(bubbleInterval);
     clearInterval(timerInterval);
