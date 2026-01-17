@@ -16,32 +16,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===== 難易度設定 ===== */
   const modes = {
-    easy:   { size: 60, speed: 1.0 },
-    normal: { size: 45, speed: 1.5 },
-    hard:   { size: 35, speed: 2.0 }
+    easy:   { size: 60, speed: 1.0, interval: 600 },
+    normal: { size: 45, speed: 1.5, interval: 400 },
+    hard:   { size: 35, speed: 2.0, interval: 250 }
   };
   let currentMode = modes.easy;
 
-  /* ===== 上部操作バー（横並び） ===== */
-  const uiBar = document.createElement("div");
-  uiBar.style.cssText = `
-    position: fixed;
-    top: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    z-index: 20;
-    background: rgba(0,0,0,0.4);
-    padding: 6px 10px;
-    border-radius: 8px;
-  `;
-  document.body.appendChild(uiBar);
-
-  /* ===== モード選択 ===== */
+  /* ===== モード選択（左上） ===== */
   const modeSelect = document.createElement("select");
-  modeSelect.style.fontSize = "14px";
+  modeSelect.style.cssText = `
+    position:fixed;
+    top:8px;
+    left:8px;
+    z-index:20;
+    font-size:14px;
+  `;
   modeSelect.innerHTML = `
     <option value="easy">やさしい</option>
     <option value="normal">ふつう</option>
@@ -50,19 +39,31 @@ document.addEventListener("DOMContentLoaded", () => {
   modeSelect.addEventListener("change", () => {
     currentMode = modes[modeSelect.value];
   });
-  uiBar.appendChild(modeSelect);
+  document.body.appendChild(modeSelect);
 
-  /* ===== スタートボタン（小） ===== */
-  startBtn.style.fontSize = "14px";
-  startBtn.style.padding = "4px 12px";
-  uiBar.appendChild(startBtn);
+  /* ===== スタートボタン（上中央） ===== */
+  startBtn.style.cssText = `
+    position:fixed;
+    top:8px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:20;
+    font-size:14px;
+    padding:4px 14px;
+  `;
 
-  /* ===== リセットボタン（小） ===== */
+  /* ===== リセットボタン（右上） ===== */
   const resetBtn = document.createElement("button");
   resetBtn.textContent = "リセット";
-  resetBtn.style.fontSize = "14px";
-  resetBtn.style.padding = "4px 12px";
-  uiBar.appendChild(resetBtn);
+  resetBtn.style.cssText = `
+    position:fixed;
+    top:8px;
+    right:8px;
+    z-index:20;
+    font-size:14px;
+    padding:4px 14px;
+  `;
+  document.body.appendChild(resetBtn);
 
   resetBtn.addEventListener("click", () => {
     clearInterval(bubbleInterval);
@@ -134,10 +135,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const size = currentMode.size;
     bubble.style.width = size + "px";
     bubble.style.height = size + "px";
-
     bubble.style.left =
       Math.random() * (window.innerWidth - size) + "px";
     bubble.style.top = -size + "px";
+
     document.body.appendChild(bubble);
 
     const speed = (2 + Math.random() * 3) * currentMode.speed;
@@ -206,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
     scoreDiv.textContent = "Score: 0";
     timerDiv.textContent = "Time: 30";
 
-    bubbleInterval = setInterval(createBubble, 600);
+    bubbleInterval = setInterval(createBubble, currentMode.interval);
 
     timerInterval = setInterval(() => {
       timeLeft--;
