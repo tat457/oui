@@ -142,19 +142,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ===== スタート ===== */
-  startBtn.addEventListener("click", () => {
-    /* 🔑 iOS Safari 音声アンロック */
-    bgm.muted = true;
-    bgm.play().then(() => {
+  startBtn.addEventListener("click", async () => {
+
+    /* 🔑 iOS Safari 完全音声アンロック */
+    try {
+      bgm.muted = true;
+      await bgm.play();
+      bgm.pause();
+      bgm.currentTime = 0;
       bgm.muted = false;
-    });
+      bgm.play();
+    } catch (e) {
+      console.warn("BGM autoplay blocked:", e);
+    }
 
     popSound.muted = true;
     popSound.play().then(() => {
       popSound.pause();
       popSound.currentTime = 0;
       popSound.muted = false;
-    });
+    }).catch(()=>{});
 
     clearInterval(bubbleInterval);
     clearInterval(timerInterval);
