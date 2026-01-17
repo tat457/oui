@@ -22,14 +22,26 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   let currentMode = modes.easy;
 
-  /* ===== 上部UIエリア ===== */
+  /* ===== 上部操作バー（横並び） ===== */
   const uiBar = document.createElement("div");
-  uiBar.style.cssText =
-    "position:fixed;top:5px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;";
+  uiBar.style.cssText = `
+    position: fixed;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 20;
+    background: rgba(0,0,0,0.4);
+    padding: 6px 10px;
+    border-radius: 8px;
+  `;
   document.body.appendChild(uiBar);
 
   /* ===== モード選択 ===== */
   const modeSelect = document.createElement("select");
+  modeSelect.style.fontSize = "14px";
   modeSelect.innerHTML = `
     <option value="easy">やさしい</option>
     <option value="normal">ふつう</option>
@@ -42,14 +54,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===== スタートボタン（小） ===== */
   startBtn.style.fontSize = "14px";
-  startBtn.style.padding = "4px 10px";
+  startBtn.style.padding = "4px 12px";
   uiBar.appendChild(startBtn);
 
   /* ===== リセットボタン（小） ===== */
   const resetBtn = document.createElement("button");
   resetBtn.textContent = "リセット";
   resetBtn.style.fontSize = "14px";
-  resetBtn.style.padding = "4px 10px";
+  resetBtn.style.padding = "4px 12px";
   uiBar.appendChild(resetBtn);
 
   resetBtn.addEventListener("click", () => {
@@ -69,14 +81,14 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===== スコア表示 ===== */
   const scoreDiv = document.createElement("div");
   scoreDiv.style.cssText =
-    "position:fixed;top:45px;left:10px;color:white;font-size:22px;z-index:10;";
+    "position:fixed;top:60px;left:10px;color:white;font-size:22px;z-index:10;";
   scoreDiv.textContent = "Score: 0";
   document.body.appendChild(scoreDiv);
 
   /* ===== タイマー表示 ===== */
   const timerDiv = document.createElement("div");
   timerDiv.style.cssText =
-    "position:fixed;top:45px;right:10px;color:white;font-size:22px;z-index:10;";
+    "position:fixed;top:60px;right:10px;color:white;font-size:22px;z-index:10;";
   timerDiv.textContent = "Time: 30";
   document.body.appendChild(timerDiv);
 
@@ -114,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   cameraMP.start();
 
-  /* ===== 泡生成（上→下） ===== */
+  /* ===== 泡生成（上 → 下） ===== */
   function createBubble() {
     const bubble = document.createElement("div");
     bubble.className = "bubble";
@@ -128,9 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bubble.style.top = -size + "px";
     document.body.appendChild(bubble);
 
-    const baseSpeed = 2 + Math.random() * 3;
-    const speed = baseSpeed * currentMode.speed;
-
+    const speed = (2 + Math.random() * 3) * currentMode.speed;
     let removed = false;
 
     function burst() {
