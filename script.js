@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ===== 効果音 & BGM ===== */
   const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
-  const bgm = new Audio("ゲームBGM_Music.mp3");
+  const bgm = new Audio("bgm_Music.mp3");
   bgm.loop = true;
   bgm.volume = 0.5;
 
