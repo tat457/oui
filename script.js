@@ -2,11 +2,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const video = document.getElementById("video");
   const startBtn = document.getElementById("startBtn");
 
-  /* ===== 効果音 & BGM ===== */
+  /* ===== 効果音 ===== */
   const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
-  const bgm = new Audio("bgm_Music.mp3");
-  bgm.loop = true;
-  bgm.volume = 0.4;
+
+  /* ===== BGM（難易度別） ===== */
+  const bgms = {
+    easy: new Audio("bgm_Music.mp3"),
+    normal: new Audio("Bgm2_Music.mp3"),
+    hard: new Audio("Bgm3_Music.mp3")
+  };
+  Object.values(bgms).forEach(bgm => {
+    bgm.loop = true;
+    bgm.volume = 0.4;
+  });
+
+  let currentBgm = bgms.easy;
 
   let bubbleInterval = null;
   let timerInterval = null;
@@ -22,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   let currentMode = modes.easy;
 
-  /* ===== モード選択（左上） ===== */
+  /* ===== モード選択 ===== */
   const modeSelect = document.createElement("select");
   modeSelect.style.cssText = `
     position:fixed;
@@ -36,12 +46,18 @@ document.addEventListener("DOMContentLoaded", () => {
     <option value="normal">ふつう</option>
     <option value="hard">むずかしい</option>
   `;
-  modeSelect.addEventListener("change", () => {
-    currentMode = modes[modeSelect.value];
-  });
   document.body.appendChild(modeSelect);
 
-  /* ===== スタートボタン（上中央） ===== */
+  modeSelect.addEventListener("change", () => {
+    currentMode = modes[modeSelect.value];
+
+    /* BGM切り替え */
+    currentBgm.pause();
+    currentBgm.currentTime = 0;
+    currentBgm = bgms[modeSelect.value];
+  });
+
+  /* ===== スタートボタン ===== */
   startBtn.style.cssText = `
     position:fixed;
     top:8px;
@@ -52,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     padding:4px 14px;
   `;
 
-  /* ===== リセットボタン（右上） ===== */
+  /* ===== リセットボタン ===== */
   const resetBtn = document.createElement("button");
   resetBtn.textContent = "リセット";
   resetBtn.style.cssText = `
@@ -75,18 +91,18 @@ document.addEventListener("DOMContentLoaded", () => {
     scoreDiv.textContent = "Score: 0";
     timerDiv.textContent = "Time: 30";
 
-    bgm.pause();
-    bgm.currentTime = 0;
+    currentBgm.pause();
+    currentBgm.currentTime = 0;
   });
 
-  /* ===== スコア表示 ===== */
+  /* ===== スコア ===== */
   const scoreDiv = document.createElement("div");
   scoreDiv.style.cssText =
     "position:fixed;top:60px;left:10px;color:white;font-size:22px;z-index:10;";
   scoreDiv.textContent = "Score: 0";
   document.body.appendChild(scoreDiv);
 
-  /* ===== タイマー表示 ===== */
+  /* ===== タイマー ===== */
   const timerDiv = document.createElement("div");
   timerDiv.style.cssText =
     "position:fixed;top:60px;right:10px;color:white;font-size:22px;z-index:10;";
@@ -127,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   cameraMP.start();
 
-  /* ===== 泡生成（上 → 下） ===== */
+  /* ===== 泡生成 ===== */
   function createBubble() {
     const bubble = document.createElement("div");
     bubble.className = "bubble";
@@ -148,14 +164,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (removed) return;
       removed = true;
 
-      bubble.classList.add("burst");
       popSound.currentTime = 0;
       popSound.play().catch(() => {});
 
       score++;
       scoreDiv.textContent = "Score: " + score;
-
-      setTimeout(() => bubble.remove(), 250);
+      bubble.remove();
     }
 
     function move() {
@@ -179,7 +193,6 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
       }
-
       requestAnimationFrame(move);
     }
 
@@ -190,12 +203,12 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===== スタート ===== */
   startBtn.addEventListener("click", async () => {
     try {
-      bgm.muted = true;
-      await bgm.play();
-      bgm.pause();
-      bgm.currentTime = 0;
-      bgm.muted = false;
-      bgm.play();
+      currentBgm.muted = true;
+      await currentBgm.play();
+      currentBgm.pause();
+      currentBgm.currentTime = 0;
+      currentBgm.muted = false;
+      currentBgm.play();
     } catch {}
 
     clearInterval(bubbleInterval);
@@ -216,8 +229,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
         clearInterval(bubbleInterval);
-        bgm.pause();
-        bgm.currentTime = 0;
+        currentBgm.pause();
+        currentBgm.currentTime = 0;
         alert(`終了！あなたのスコア: ${score}`);
       }
     }, 1000);
