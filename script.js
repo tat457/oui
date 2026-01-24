@@ -1,181 +1,225 @@
 document.addEventListener("DOMContentLoaded", () => {
   const video = document.getElementById("video");
+  const startBtn = document.getElementById("startBtn");
 
-  /* ===== 音 ===== */
+  /* ===== 効果音 & BGM ===== */
   const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
   const bgm = new Audio("bgm_Music.mp3");
   bgm.loop = true;
   bgm.volume = 0.4;
 
-  let bubbleTimer, gameTimer;
+  let bubbleInterval = null;
+  let timerInterval = null;
   let score = 0;
   let timeLeft = 30;
   let handPos = [];
 
-  /* ===== モード設定 ===== */
+  /* ===== 難易度設定 ===== */
   const modes = {
-    easy:   { size: 60, speed: 1.2, interval: 800 },
-    normal: { size: 45, speed: 1.8, interval: 550 },
-    hard:   { size: 35, speed: 2.4, interval: 350 }
+    easy:   { size: 60, speed: 1.0, interval: 600 },
+    normal: { size: 45, speed: 1.5, interval: 400 },
+    hard:   { size: 35, speed: 2.0, interval: 250 }
   };
-  let currentMode = "easy";
-
-  /* ===== 共通ボタンCSS ===== */
-  const btnBase = `
-    position: fixed;
-    top: 10px;
-    padding: 6px 14px;
-    font-size: 14px;
-    border-radius: 16px;
-    border: none;
-    background: rgba(255,255,255,0.9);
-    z-index: 20;
-  `;
+  let currentMode = modes.easy;
 
   /* ===== モード選択（左上） ===== */
   const modeSelect = document.createElement("select");
+  modeSelect.style.cssText = `
+    position:fixed;
+    top:8px;
+    left:8px;
+    z-index:20;
+    font-size:14px;
+  `;
   modeSelect.innerHTML = `
     <option value="easy">やさしい</option>
     <option value="normal">ふつう</option>
     <option value="hard">むずかしい</option>
   `;
-  modeSelect.style.cssText = btnBase + "left:10px;";
+  modeSelect.addEventListener("change", () => {
+    currentMode = modes[modeSelect.value];
+  });
   document.body.appendChild(modeSelect);
 
-  modeSelect.onchange = e => currentMode = e.target.value;
+  /* ===== スタートボタン（上中央） ===== */
+  startBtn.style.cssText = `
+    position:fixed;
+    top:8px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:20;
+    font-size:14px;
+    padding:4px 14px;
+  `;
 
-  /* ===== スタート（上中央） ===== */
-  const startBtn = document.createElement("button");
-  startBtn.textContent = "スタート";
-  startBtn.style.cssText =
-    btnBase + "left:50%;transform:translateX(-50%);";
-  document.body.appendChild(startBtn);
-
-  /* ===== リセット（右上） ===== */
+  /* ===== リセットボタン（右上） ===== */
   const resetBtn = document.createElement("button");
   resetBtn.textContent = "リセット";
-  resetBtn.style.cssText = btnBase + "right:10px;";
+  resetBtn.style.cssText = `
+    position:fixed;
+    top:8px;
+    right:8px;
+    z-index:20;
+    font-size:14px;
+    padding:4px 14px;
+  `;
   document.body.appendChild(resetBtn);
 
-  /* ===== 表示 ===== */
+  resetBtn.addEventListener("click", () => {
+    clearInterval(bubbleInterval);
+    clearInterval(timerInterval);
+    document.querySelectorAll(".bubble").forEach(b => b.remove());
+
+    score = 0;
+    timeLeft = 30;
+    scoreDiv.textContent = "Score: 0";
+    timerDiv.textContent = "Time: 30";
+
+    bgm.pause();
+    bgm.currentTime = 0;
+  });
+
+  /* ===== スコア表示 ===== */
   const scoreDiv = document.createElement("div");
   scoreDiv.style.cssText =
-    "position:fixed;top:50px;left:10px;color:white;font-size:22px;z-index:10;";
+    "position:fixed;top:60px;left:10px;color:white;font-size:22px;z-index:10;";
   scoreDiv.textContent = "Score: 0";
   document.body.appendChild(scoreDiv);
 
+  /* ===== タイマー表示 ===== */
   const timerDiv = document.createElement("div");
   timerDiv.style.cssText =
-    "position:fixed;top:50px;right:10px;color:white;font-size:22px;z-index:10;";
+    "position:fixed;top:60px;right:10px;color:white;font-size:22px;z-index:10;";
   timerDiv.textContent = "Time: 30";
   document.body.appendChild(timerDiv);
 
-  /* ===== リセット ===== */
-  resetBtn.onclick = () => {
-    clearInterval(bubbleTimer);
-    clearInterval(gameTimer);
-    document.querySelectorAll(".bubble").forEach(b => b.remove());
-    bgm.pause(); bgm.currentTime = 0;
-    score = 0; timeLeft = 30;
-    scoreDiv.textContent = "Score: 0";
-    timerDiv.textContent = "Time: 30";
-  };
-
-  /* ===== MediaPipe ===== */
+  /* ===== MediaPipe Hands ===== */
   const hands = new Hands({
-    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+    locateFile: file =>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
   });
+
   hands.setOptions({
     maxNumHands: 1,
+    modelComplexity: 1,
     minDetectionConfidence: 0.7,
     minTrackingConfidence: 0.7
   });
 
-  hands.onResults(r => {
+  hands.onResults(results => {
     handPos = [];
-    if (r.multiHandLandmarks?.length) {
-      [r.multiHandLandmarks[0][4], r.multiHandLandmarks[0][8]].forEach(p => {
+    if (results.multiHandLandmarks?.length) {
+      const hand = results.multiHandLandmarks[0];
+      [hand[4], hand[8]].forEach(tip => {
         handPos.push({
-          x: innerWidth * (1 - p.x),
-          y: innerHeight * p.y
+          x: window.innerWidth * (1 - tip.x),
+          y: window.innerHeight * tip.y
         });
       });
     }
   });
 
-  new Camera(video, {
+  const cameraMP = new Camera(video, {
     onFrame: async () => await hands.send({ image: video }),
     width: 640,
     height: 480,
     facingMode: "user"
-  }).start();
+  });
+  cameraMP.start();
 
-  /* ===== 泡 ===== */
+  /* ===== 泡生成（上 → 下） ===== */
   function createBubble() {
-    const m = modes[currentMode];
-    const b = document.createElement("div");
-    b.className = "bubble";
-    b.style.width = b.style.height = m.size + "px";
-    b.style.left = Math.random() * (innerWidth - m.size) + "px";
-    b.style.top = "-60px";
-    document.body.appendChild(b);
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
 
-    let y = -m.size, dead = false;
+    const size = currentMode.size;
+    bubble.style.width = size + "px";
+    bubble.style.height = size + "px";
+    bubble.style.left =
+      Math.random() * (window.innerWidth - size) + "px";
+    bubble.style.top = -size + "px";
+
+    document.body.appendChild(bubble);
+
+    const speed = (2 + Math.random() * 3) * currentMode.speed;
+    let removed = false;
 
     function burst() {
-      if (dead) return;
-      dead = true;
-      b.classList.add("burst");
+      if (removed) return;
+      removed = true;
+
+      bubble.classList.add("burst");
       popSound.currentTime = 0;
-      popSound.play().catch(()=>{});
+      popSound.play().catch(() => {});
+
       score++;
       scoreDiv.textContent = "Score: " + score;
-      setTimeout(() => b.remove(), 200);
+
+      setTimeout(() => bubble.remove(), 250);
     }
 
     function move() {
-      if (dead) return;
-      y += m.speed * 3;
-      b.style.top = y + "px";
-      if (y > innerHeight) return b.remove();
+      if (removed) return;
+
+      let top = parseFloat(bubble.style.top);
+      top += speed;
+      bubble.style.top = top + "px";
+
+      if (top > window.innerHeight) {
+        bubble.remove();
+        return;
+      }
 
       for (const p of handPos) {
-        const r = b.getBoundingClientRect();
-        if (Math.hypot(r.left+r.width/2-p.x, r.top+r.height/2-p.y) < m.size) {
-          burst(); return;
+        const rect = bubble.getBoundingClientRect();
+        const dx = rect.left + rect.width / 2 - p.x;
+        const dy = rect.top + rect.height / 2 - p.y;
+        if (Math.sqrt(dx * dx + dy * dy) < size) {
+          burst();
+          return;
         }
       }
+
       requestAnimationFrame(move);
     }
-    b.onclick = burst;
+
+    bubble.addEventListener("touchstart", burst);
     move();
   }
 
-  /* ===== スタート処理 ===== */
-  startBtn.onclick = async () => {
+  /* ===== スタート ===== */
+  startBtn.addEventListener("click", async () => {
     try {
       bgm.muted = true;
       await bgm.play();
-      bgm.pause(); bgm.currentTime = 0;
+      bgm.pause();
+      bgm.currentTime = 0;
       bgm.muted = false;
       bgm.play();
     } catch {}
 
+    clearInterval(bubbleInterval);
+    clearInterval(timerInterval);
     document.querySelectorAll(".bubble").forEach(b => b.remove());
-    score = 0; timeLeft = 30;
+
+    score = 0;
+    timeLeft = 30;
     scoreDiv.textContent = "Score: 0";
     timerDiv.textContent = "Time: 30";
 
-    bubbleTimer = setInterval(createBubble, modes[currentMode].interval);
-    gameTimer = setInterval(() => {
+    bubbleInterval = setInterval(createBubble, currentMode.interval);
+
+    timerInterval = setInterval(() => {
       timeLeft--;
       timerDiv.textContent = "Time: " + timeLeft;
+
       if (timeLeft <= 0) {
-        clearInterval(gameTimer);
-        clearInterval(bubbleTimer);
+        clearInterval(timerInterval);
+        clearInterval(bubbleInterval);
         bgm.pause();
-        alert(`終了！スコア: ${score}`);
+        bgm.currentTime = 0;
+        alert(`終了！あなたのスコア: ${score}`);
       }
     }, 1000);
-  };
+  });
 });
