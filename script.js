@@ -202,7 +202,7 @@ function createParticles(x,y){
 
 function createObject(){
 
- const isBomb = Math.random() < 0.15;
+ const isBomb = Math.random() < 0.5;
 
  const obj=document.createElement("div");
  obj.className = isBomb ? "bomb" : "bubble";
