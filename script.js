@@ -5,7 +5,6 @@ const startBtn = document.getElementById("startBtn");
 
 /* ===== 効果音 ===== */
 const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
-const bombSound = new Audio("Balloon-Pop01-1(Dry).mp3");
 
 /* ===== BGM ===== */
 const bgms = {
@@ -60,13 +59,17 @@ modeSelect.innerHTML=`
 document.body.appendChild(modeSelect);
 
 modeSelect.addEventListener("change",()=>{
-  currentMode=modes[modeSelect.value];
-  currentBgm.pause();
-  currentBgm.currentTime=0;
-  currentBgm=bgms[modeSelect.value];
+
+currentMode=modes[modeSelect.value];
+
+currentBgm.pause();
+currentBgm.currentTime=0;
+
+currentBgm=bgms[modeSelect.value];
+
 });
 
-/* ===== ボタン ===== */
+/* ===== ボタン配置 ===== */
 
 startBtn.style.cssText=`
 position:fixed;
@@ -78,8 +81,12 @@ font-size:14px;
 padding:4px 14px;
 `;
 
+/* ===== リセット ===== */
+
 const resetBtn=document.createElement("button");
+
 resetBtn.textContent="リセット";
+
 resetBtn.style.cssText=`
 position:fixed;
 top:8px;
@@ -88,30 +95,47 @@ z-index:20;
 font-size:14px;
 padding:4px 14px;
 `;
+
 document.body.appendChild(resetBtn);
 
 resetBtn.addEventListener("click",()=>{
-  clearInterval(bubbleInterval);
-  clearInterval(timerInterval);
-  document.querySelectorAll(".bubble,.bomb").forEach(b=>b.remove());
-  score=0;
-  timeLeft=30;
-  scoreDiv.textContent="Score: 0";
-  timerDiv.textContent="Time: 30";
-  currentBgm.pause();
-  currentBgm.currentTime=0;
+
+clearInterval(bubbleInterval);
+clearInterval(timerInterval);
+
+document.querySelectorAll(".bubble").forEach(b=>b.remove());
+
+score=0;
+timeLeft=30;
+
+scoreDiv.textContent="Score: 0";
+timerDiv.textContent="Time: 30";
+
+currentBgm.pause();
+currentBgm.currentTime=0;
+
 });
 
-/* ===== UI ===== */
+/* ===== スコア ===== */
 
 const scoreDiv=document.createElement("div");
-scoreDiv.style.cssText="position:fixed;top:60px;left:10px;color:white;font-size:22px;";
+
+scoreDiv.style.cssText=
+"position:fixed;top:60px;left:10px;color:white;font-size:22px;z-index:10;";
+
 scoreDiv.textContent="Score: 0";
+
 document.body.appendChild(scoreDiv);
 
+/* ===== タイマー ===== */
+
 const timerDiv=document.createElement("div");
-timerDiv.style.cssText="position:fixed;top:60px;right:10px;color:white;font-size:22px;";
+
+timerDiv.style.cssText=
+"position:fixed;top:60px;right:10px;color:white;font-size:22px;z-index:10;";
+
 timerDiv.textContent="Time: 30";
+
 document.body.appendChild(timerDiv);
 
 /* ===== MediaPipe ===== */
@@ -129,212 +153,259 @@ hands.setOptions({
 });
 
 hands.onResults(results=>{
- handPos=[];
 
- if(results.multiHandLandmarks?.length){
+handPos=[];
 
- const hand=results.multiHandLandmarks[0];
+if(results.multiHandLandmarks?.length){
 
- const points=[hand[4],hand[8],hand[12],hand[16],hand[20]];
+const hand=results.multiHandLandmarks[0];
 
- points.forEach(p=>{
-   handPos.push({
-     x:window.innerWidth*(1-p.x),
-     y:window.innerHeight*p.y
-   });
- });
+const points=[
+hand[4],
+hand[8],
+hand[12],
+hand[16],
+hand[20]
+];
 
- const palmX=(hand[0].x+hand[5].x+hand[17].x)/3;
- const palmY=(hand[0].y+hand[5].y+hand[17].y)/3;
+points.forEach(p=>{
 
- handPos.push({
-   x:window.innerWidth*(1-palmX),
-   y:window.innerHeight*palmY
- });
+handPos.push({
+x:window.innerWidth*(1-p.x),
+y:window.innerHeight*p.y
+});
 
- const size=Math.hypot(
-   hand[5].x-hand[17].x,
-   hand[5].y-hand[17].y
- );
+});
 
- handRadius=size*window.innerWidth*1.8;
- }
+/* 手のひら */
+
+const palmX=(hand[0].x+hand[5].x+hand[17].x)/3;
+const palmY=(hand[0].y+hand[5].y+hand[17].y)/3;
+
+handPos.push({
+x:window.innerWidth*(1-palmX),
+y:window.innerHeight*palmY
+});
+
+/* 手サイズ */
+
+const size=Math.hypot(
+hand[5].x-hand[17].x,
+hand[5].y-hand[17].y
+);
+
+handRadius=size*window.innerWidth*1.8;
+
+}
+
 });
 
 /* ===== カメラ ===== */
 
 const cameraMP=new Camera(video,{
- onFrame:async()=>{ await hands.send({image:video}); },
- width:640,
- height:480,
- facingMode:"user"
+onFrame:async()=>{
+await hands.send({image:video});
+},
+width:640,
+height:480,
+facingMode:"user"
 });
 
 cameraMP.start();
 
-/* ===== エフェクト ===== */
+/* ===== パーティクル ===== */
 
 function createParticles(x,y){
- for(let i=0;i<6;i++){
-   const p=document.createElement("div");
-   p.style.position="absolute";
-   p.style.left=x+"px";
-   p.style.top=y+"px";
-   p.style.width="6px";
-   p.style.height="6px";
-   p.style.borderRadius="50%";
-   p.style.background="white";
-   document.body.appendChild(p);
 
-   const dx=(Math.random()-0.5)*80;
-   const dy=(Math.random()-0.5)*80;
+for(let i=0;i<6;i++){
 
-   p.animate([
-     {transform:"translate(0,0)",opacity:1},
-     {transform:`translate(${dx}px,${dy}px)`,opacity:0}
-   ],{duration:400});
+const p=document.createElement("div");
 
-   setTimeout(()=>p.remove(),400);
- }
+p.style.position="absolute";
+p.style.left=x+"px";
+p.style.top=y+"px";
+
+p.style.width="6px";
+p.style.height="6px";
+
+p.style.borderRadius="50%";
+
+p.style.background="white";
+
+document.body.appendChild(p);
+
+const dx=(Math.random()-0.5)*80;
+const dy=(Math.random()-0.5)*80;
+
+p.animate([
+{transform:"translate(0,0)",opacity:1},
+{transform:`translate(${dx}px,${dy}px)`,opacity:0}
+],{duration:400});
+
+setTimeout(()=>p.remove(),400);
+
 }
 
-/* ===== オブジェクト生成 ===== */
+}
 
-function createObject(){
+/* ===== 泡生成 ===== */
 
- const isBomb = Math.random() < 0.5;
+function createBubble(){
 
- const obj=document.createElement("div");
- obj.className = isBomb ? "bomb" : "bubble";
+const bubble=document.createElement("div");
+bubble.className="bubble";
 
- const size=currentMode.size;
+const size=currentMode.size;
 
- obj.style.width=size+"px";
- obj.style.height=size+"px";
+bubble.style.width=size+"px";
+bubble.style.height=size+"px";
 
- obj.style.left=Math.random()*(window.innerWidth-size)+"px";
- obj.style.top=-size+"px";
+bubble.style.left=
+Math.random()*(window.innerWidth-size)+"px";
 
- if(isBomb){
-   obj.style.backgroundImage = "url('bomb.png')";
-   obj.style.backgroundSize = "contain";
-   obj.style.backgroundRepeat = "no-repeat";
-   obj.style.backgroundPosition = "center";
- }else{
-   obj.style.borderRadius="50%";
-   obj.style.background="rgba(173,216,230,0.7)";
- }
+bubble.style.top=-size+"px";
 
- document.body.appendChild(obj);
+/* ランダム色 */
 
- const speed=(2+Math.random()*3)*currentMode.speed;
+const colors=[
+"rgba(173,216,230,0.7)",
+"rgba(255,182,193,0.7)",
+"rgba(255,255,150,0.7)",
+"rgba(180,255,200,0.7)"
+];
 
- let removed=false;
+bubble.style.background=
+colors[Math.floor(Math.random()*colors.length)];
 
- function hit(){
-   if(removed)return;
-   removed=true;
+document.body.appendChild(bubble);
 
-   const rect=obj.getBoundingClientRect();
+const speed=(2+Math.random()*3)*currentMode.speed;
 
-   createParticles(
-     rect.left+rect.width/2,
-     rect.top+rect.height/2
-   );
+let removed=false;
 
-   if(isBomb){
-     bombSound.play().catch(()=>{});
-     score=Math.max(0,score-3);
-   }else{
-     popSound.play().catch(()=>{});
-     score++;
-   }
+function burst(){
 
-   scoreDiv.textContent="Score: "+score;
+if(removed)return;
 
-   obj.remove();
- }
+removed=true;
 
- function move(){
+popSound.currentTime=0;
+popSound.play().catch(()=>{});
 
-   if(removed)return;
+score++;
+scoreDiv.textContent="Score: "+score;
 
-   let top=parseFloat(obj.style.top);
-   top+=speed;
-   obj.style.top=top+"px";
+const rect=bubble.getBoundingClientRect();
 
-   if(top>window.innerHeight){
-     obj.remove();
-     return;
-   }
+createParticles(
+rect.left+rect.width/2,
+rect.top+rect.height/2
+);
 
-   for(const p of handPos){
-     const rect=obj.getBoundingClientRect();
-     const dx=rect.left+rect.width/2-p.x;
-     const dy=rect.top+rect.height/2-p.y;
+bubble.remove();
 
-     const hitRadius=Math.max(size*1.8,handRadius);
+}
 
-     if(Math.sqrt(dx*dx+dy*dy)<hitRadius){
-       hit();
-       return;
-     }
-   }
+function move(){
 
-   requestAnimationFrame(move);
- }
+if(removed)return;
 
- obj.addEventListener("touchstart",hit);
+let top=parseFloat(bubble.style.top);
 
- move();
+top+=speed;
+
+bubble.style.top=top+"px";
+
+if(top>window.innerHeight){
+
+bubble.remove();
+return;
+
+}
+
+for(const p of handPos){
+
+const rect=bubble.getBoundingClientRect();
+
+const dx=rect.left+rect.width/2-p.x;
+const dy=rect.top+rect.height/2-p.y;
+
+const hitRadius=Math.max(size*1.8,handRadius);
+
+if(Math.sqrt(dx*dx+dy*dy)<hitRadius){
+
+burst();
+return;
+
+}
+
+}
+
+requestAnimationFrame(move);
+
+}
+
+bubble.addEventListener("touchstart",burst);
+
+move();
+
 }
 
 /* ===== スタート ===== */
 
 startBtn.addEventListener("click",async()=>{
 
- try{
-   currentBgm.muted=true;
-   await currentBgm.play();
-   currentBgm.pause();
-   currentBgm.currentTime=0;
-   currentBgm.muted=false;
-   currentBgm.play();
- }catch{}
+try{
 
- clearInterval(bubbleInterval);
- clearInterval(timerInterval);
+currentBgm.muted=true;
 
- document.querySelectorAll(".bubble,.bomb").forEach(b=>b.remove());
+await currentBgm.play();
 
- score=0;
- timeLeft=30;
+currentBgm.pause();
 
- scoreDiv.textContent="Score: 0";
- timerDiv.textContent="Time: 30";
+currentBgm.currentTime=0;
 
- bubbleInterval=setInterval(
-   createObject,
-   currentMode.interval
- );
+currentBgm.muted=false;
 
- timerInterval=setInterval(()=>{
+currentBgm.play();
 
-   timeLeft--;
-   timerDiv.textContent="Time: "+timeLeft;
+}catch{}
 
-   if(timeLeft<=0){
+clearInterval(bubbleInterval);
+clearInterval(timerInterval);
 
-     clearInterval(timerInterval);
-     clearInterval(bubbleInterval);
+document.querySelectorAll(".bubble").forEach(b=>b.remove());
 
-     currentBgm.pause();
-     currentBgm.currentTime=0;
+score=0;
+timeLeft=30;
 
-     alert(`終了！あなたのスコア: ${score}`);
-   }
+scoreDiv.textContent="Score: 0";
+timerDiv.textContent="Time: 30";
 
- },1000);
+bubbleInterval=setInterval(
+createBubble,
+currentMode.interval
+);
+
+timerInterval=setInterval(()=>{
+
+timeLeft--;
+
+timerDiv.textContent="Time: "+timeLeft;
+
+if(timeLeft<=0){
+
+clearInterval(timerInterval);
+clearInterval(bubbleInterval);
+
+currentBgm.pause();
+currentBgm.currentTime=0;
+
+alert(`終了！あなたのスコア: ${score}`);
+
+}
+
+},1000);
 
 });
 
