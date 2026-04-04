@@ -9,8 +9,8 @@ const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
 /* ===== BGM ===== */
 const bgms = {
   easy: new Audio("bgm_Music.mp3"),
-  normal: new Audio("Bgm2_Music.mp3"),
-  hard: new Audio("Bgm3_Music.mp3")
+  normal: new Audio("awawa.mp3"),
+  hard: new Audio("awawawa.mp3")
 };
 
 Object.values(bgms).forEach(bgm=>{
