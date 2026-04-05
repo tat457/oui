@@ -5,7 +5,7 @@ const startBtn = document.getElementById("startBtn");
 
 /* ===== 効果音 ===== */
 const popSound = new Audio("Balloon-Pop01-1(Dry).mp3");
-const bombSound = new Audio("Balloon-Pop01-1(Dry).mp3");
+const bombSound = new Audio("bakuhatu.mp3");
 
 /* ===== BGM ===== */
 const bgms = {
