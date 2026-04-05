@@ -187,7 +187,7 @@ function createParticles(x,y){
 /* ===== オブジェクト生成（泡＋爆弾） ===== */
 function createObject(){
 
- const isBomb = Math.random() < 0.15;
+ const isBomb = Math.random() < 0.1;
 
  const obj=document.createElement("div");
  obj.className = isBomb ? "bomb" : "bubble";
