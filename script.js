@@ -106,6 +106,27 @@ timerDiv.style.cssText="position:fixed;top:60px;right:10px;color:white;font-size
 timerDiv.textContent="Time: 30";
 document.body.appendChild(timerDiv);
 
+/* ===== スコアポップ表示 ===== */
+function showScoreText(x,y,text,color){
+  const el=document.createElement("div");
+  el.textContent=text;
+  el.style.position="absolute";
+  el.style.left=x+"px";
+  el.style.top=y+"px";
+  el.style.color=color;
+  el.style.fontSize="24px";
+  el.style.fontWeight="bold";
+  el.style.pointerEvents="none";
+  document.body.appendChild(el);
+
+  el.animate([
+    {transform:"translateY(0)",opacity:1},
+    {transform:"translateY(-50px)",opacity:0}
+  ],{duration:600});
+
+  setTimeout(()=>el.remove(),600);
+}
+
 /* ===== MediaPipe ===== */
 const hands = new Hands({
  locateFile: file =>
@@ -159,7 +180,7 @@ const cameraMP=new Camera(video,{
 });
 cameraMP.start();
 
-/* ===== パーティクル ===== */
+/* ===== パーティクル（泡） ===== */
 function createParticles(x,y){
  for(let i=0;i<6;i++){
   const p=document.createElement("div");
@@ -184,10 +205,35 @@ function createParticles(x,y){
  }
 }
 
-/* ===== オブジェクト生成（泡＋爆弾） ===== */
+/* ===== 爆発パーティクル ===== */
+function createExplosion(x,y){
+ for(let i=0;i<12;i++){
+  const p=document.createElement("div");
+  p.style.position="absolute";
+  p.style.left=x+"px";
+  p.style.top=y+"px";
+  p.style.width="8px";
+  p.style.height="8px";
+  p.style.borderRadius="50%";
+  p.style.background="orange";
+  document.body.appendChild(p);
+
+  const dx=(Math.random()-0.5)*150;
+  const dy=(Math.random()-0.5)*150;
+
+  p.animate([
+    {transform:"translate(0,0)",opacity:1},
+    {transform:`translate(${dx}px,${dy}px)`,opacity:0}
+  ],{duration:500});
+
+  setTimeout(()=>p.remove(),500);
+ }
+}
+
+/* ===== オブジェクト生成 ===== */
 function createObject(){
 
- const isBomb = Math.random() < 0.1;
+ const isBomb = Math.random() < 0.2;
 
  const obj=document.createElement("div");
  obj.className = isBomb ? "bomb" : "bubble";
@@ -229,22 +275,22 @@ function createObject(){
   removed=true;
 
   const rect=obj.getBoundingClientRect();
-
-  createParticles(
-    rect.left+rect.width/2,
-    rect.top+rect.height/2
-  );
+  const cx=rect.left+rect.width/2;
+  const cy=rect.top+rect.height/2;
 
   if(isBomb){
     bombSound.play().catch(()=>{});
     score=Math.max(0,score-3);
+    showScoreText(cx,cy,"-3","red");
+    createExplosion(cx,cy);
   }else{
     popSound.play().catch(()=>{});
     score++;
+    showScoreText(cx,cy,"+1","lime");
+    createParticles(cx,cy);
   }
 
   scoreDiv.textContent="Score: "+score;
-
   obj.remove();
  }
 
@@ -303,10 +349,7 @@ startBtn.addEventListener("click",async()=>{
  scoreDiv.textContent="Score: 0";
  timerDiv.textContent="Time: 30";
 
- bubbleInterval=setInterval(
-   createObject, // ←ここ重要
-   currentMode.interval
- );
+ bubbleInterval=setInterval(createObject,currentMode.interval);
 
  timerInterval=setInterval(()=>{
 
